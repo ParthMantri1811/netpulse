@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NetPulse — Real-Time Network Performance Analyzer</title>
+  <meta name="description" content="Real-time network performance monitoring dashboard tracking bandwidth, latency, throughput, and packet loss with live charts and intelligent alerts." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+
+  <!-- Animated Background Particles -->
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="orb orb-1" aria-hidden="true"></div>
+  <div class="orb orb-2" aria-hidden="true"></div>
+  <div class="orb orb-3" aria-hidden="true"></div>
+
+  <!-- =================== HEADER =================== -->
+  <header class="header" role="banner">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <i class="fas fa-network-wired"></i>
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-name">NetPulse</h1>
+          <span class="brand-tagline">Network Performance Analyzer</span>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="live-badge" id="liveBadge" aria-live="polite">
+          <span class="live-dot" id="liveDot"></span>
+          <span id="liveBadgeText">LIVE</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="connection-quality-badge" id="qualityBadge" aria-label="Connection quality">
+          <i class="fas fa-signal" aria-hidden="true"></i>
+          <span id="qualityText">Excellent</span>
+        </div>
+        <div class="time-display" id="timeDisplay" aria-label="Current time"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- =================== MAIN =================== -->
+  <main class="main-container" role="main">
+
+    <!-- ===== CONTROLS BAR ===== -->
+    <section class="controls-bar" aria-label="Monitoring controls">
+      <div class="controls-left">
+        <button class="btn btn-primary btn-glow" id="btnStartStop" aria-label="Start or stop monitoring">
+          <i class="fas fa-pause" id="btnIcon" aria-hidden="true"></i>
+          <span id="btnText">Pause</span>
+        </button>
+        <button class="btn btn-secondary" id="btnReset" aria-label="Reset statistics">
+          <i class="fas fa-rotate-left" aria-hidden="true"></i>
+          Reset Stats
+        </button>
+      </div>
+
+      <div class="controls-center">
+        <label class="control-label" for="updateInterval">Update Interval:</label>
+        <select class="select-custom" id="updateInterval" aria-label="Select update interval">
+          <option value="500">0.5s</option>
+          <option value="1000" selected>1s</option>
+          <option value="2000">2s</option>
+          <option value="5000">5s</option>
+        </select>
+
+        <label class="control-label" for="historyLength">History:</label>
+        <select class="select-custom" id="historyLength" aria-label="Select chart history length">
+          <option value="30">30 pts</option>
+          <option value="60" selected>60 pts</option>
+          <option value="120">120 pts</option>
+        </select>
+      </div>
+
+      <div class="controls-right">
+        <span class="control-label">Simulate:</span>
+        <button class="btn btn-warn" id="btnSimulateCongestion" aria-label="Simulate network congestion">
+          <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+          Congestion
+        </button>
+        <button class="btn btn-danger" id="btnSimulateOutage" aria-label="Simulate network outage">
+          <i class="fas fa-plug-circle-xmark" aria-hidden="true"></i>
+          Outage
+        </button>
+        <button class="btn btn-success" id="btnSimulateRecover" aria-label="Simulate network recovery">
+          <i class="fas fa-circle-check" aria-hidden="true"></i>
+          Recover
+        </button>
+      </div>
+    </section>
+
+    <!-- ===== METRIC CARDS ===== -->
+    <section class="metric-cards" aria-label="Real-time network metrics">
+
+      <!-- Bandwidth Card -->
+      <div class="metric-card card-bandwidth" id="cardBandwidth" role="article" aria-label="Bandwidth metric">
+        <div class="card-header">
+          <div class="card-icon-wrap">
+            <i class="fas fa-gauge-high" aria-hidden="true"></i>
+          </div>
+          <div class="card-meta">
+            <span class="card-label">Bandwidth</span>
+            <span class="card-unit">Mbps</span>
+          </div>
+        </div>
+        <div class="card-value-wrap">
+          <span class="card-value" id="metricBandwidth" aria-live="polite">0.00</span>
+        </div>
+        <div class="card-stats">
+          <div class="stat-item">
+            <span class="stat-label">MIN</span>
+            <span class="stat-val" id="bwMin">—</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">AVG</span>
+            <span class="stat-val" id="bwAvg">—</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">MAX</span>
+            <span class="stat-val" id="bwMax">—</span>
+          </div>
+        </div>
+        <div class="card-sparkline-bar">
+          <div class="sparkline-fill" id="bwSparkline"></div>
+        </div>
+      </div>
+
+      <!-- Latency Card -->
+      <div class="metric-card card-latency" id="cardLatency" role="article" aria-label="Latency metric">
+        <div class="card-header">
+          <div class="card-icon-wrap">
+            <i class="fas fa-stopwatch" aria-hidden="true"></i>
+          </div>
+          <div class="card-meta">
+            <span class="card-label">Latency</span>
+            <span class="card-unit">ms</span>
+          </div>
+        </div>
+        <div class="card-value-wrap">
+          <span class="card-value" id="metricLatency" aria-live="polite">0.0</span>
+        </div>
+        <div class="card-stats">
+          <div class="stat-item">
+            <span class="stat-label">MIN</span>
+            <span class="stat-val" id="latMin">—</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">AVG</span>
+            <span class="stat-val" id="latAvg">—</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">MAX</span>
+            <span class="stat-val" id="latMax">—</span>
+          </div>
+        </div>
+        <div class="card-sparkline-bar">
+          <div class="sparkline-fill sparkline-latency" id="latSparkline"></div>
+        </div>
+      </div>
+
+      <!-- Throughput Card -->
+      <div class="metric-card card-throughput" id="cardThroughput" role="article" aria-label="Throughput metric">
+        <div class="card-header">
+          <div class="card-icon-wrap">
+            <i class="fas fa-arrow-right-arrow-left" aria-hidden="true"></i>
+          </div>
+          <div class="card-meta">
+            <span class="card-label">Throughput</span>
+            <span class="card-unit">Mbps</span>
+          </div>
+        </div>
+        <div class="card-value-wrap">
+          <span class="card-value" id="metricThroughput" aria-live="polite">0.00</span>
+        </div>
+        <div class="card-stats">
+          <div class="stat-item">
+            <span class="stat-label">MIN</span>
+            <span class="stat-val" id="tpMin">—</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">AVG</span>
+            <span class="stat-val" id="tpAvg">—</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">MAX</span>
+            <span class="stat-val" id="tpMax">—</span>
+          </div>
+        </div>
+        <div class="card-sparkline-bar">
+          <div class="sparkline-fill sparkline-throughput" id="tpSparkline"></div>
+        </div>
+      </div>
+
+      <!-- Packet Loss Card -->
+      <div class="metric-card card-packetloss" id="cardPacketloss" role="article" aria-label="Packet loss metric">
+        <div class="card-header">
+          <div class="card-icon-wrap">
+            <i class="fas fa-circle-xmark" aria-hidden="true"></i>
+          </div>
+          <div class="card-meta">
+            <span class="card-label">Packet Loss</span>
+            <span class="card-unit">%</span>
+          </div>
+        </div>
+        <div class="card-value-wrap">
+          <span class="card-value" id="metricPacketloss" aria-live="polite">0.00</span>
+        </div>
+        <div class="card-stats">
+          <div class="stat-item">
+            <span class="stat-label">MIN</span>
+            <span class="stat-val" id="plMin">—</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">AVG</span>
+            <span class="stat-val" id="plAvg">—</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">MAX</span>
+            <span class="stat-val" id="plMax">—</span>
+          </div>
+        </div>
+        <div class="card-sparkline-bar">
+          <div class="sparkline-fill sparkline-packetloss" id="plSparkline"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===== CHARTS GRID ===== -->
+    <section class="charts-grid" aria-label="Network performance charts">
+
+      <!-- Bandwidth Chart -->
+      <div class="chart-card" id="chartCardBandwidth">
+        <div class="chart-card-header">
+          <div class="chart-title-group">
+            <span class="chart-dot dot-bandwidth" aria-hidden="true"></span>
+            <h2 class="chart-title">Bandwidth Over Time</h2>
+          </div>
+          <span class="chart-badge" id="bwBadge">Normal</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartBandwidth" aria-label="Bandwidth chart" role="img"></canvas>
+        </div>
+      </div>
+
+      <!-- Latency Chart -->
+      <div class="chart-card" id="chartCardLatency">
+        <div class="chart-card-header">
+          <div class="chart-title-group">
+            <span class="chart-dot dot-latency" aria-hidden="true"></span>
+            <h2 class="chart-title">Latency Over Time</h2>
+          </div>
+          <span class="chart-badge" id="latBadge">Normal</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartLatency" aria-label="Latency chart" role="img"></canvas>
+        </div>
+      </div>
+
+      <!-- Throughput Chart -->
+      <div class="chart-card" id="chartCardThroughput">
+        <div class="chart-card-header">
+          <div class="chart-title-group">
+            <span class="chart-dot dot-throughput" aria-hidden="true"></span>
+            <h2 class="chart-title">Throughput Over Time</h2>
+          </div>
+          <span class="chart-badge" id="tpBadge">Normal</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartThroughput" aria-label="Throughput chart" role="img"></canvas>
+        </div>
+      </div>
+
+      <!-- Packet Loss Chart -->
+      <div class="chart-card" id="chartCardPacketloss">
+        <div class="chart-card-header">
+          <div class="chart-title-group">
+            <span class="chart-dot dot-packetloss" aria-hidden="true"></span>
+            <h2 class="chart-title">Packet Loss Over Time</h2>
+          </div>
+          <span class="chart-badge" id="plBadge">Normal</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartPacketloss" aria-label="Packet loss chart" role="img"></canvas>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===== BOTTOM PANELS ===== -->
+    <section class="bottom-panels" aria-label="Network details and alerts">
+
+      <!-- Connection Info -->
+      <div class="panel panel-info" aria-label="Connection information">
+        <div class="panel-header">
+          <i class="fas fa-circle-info" aria-hidden="true"></i>
+          <h2 class="panel-title">Connection Info</h2>
+        </div>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label"><i class="fas fa-ethernet" aria-hidden="true"></i> Interface</span>
+            <span class="info-value mono" id="infoInterface">eth0</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label"><i class="fas fa-location-dot" aria-hidden="true"></i> IP Address</span>
+            <span class="info-value mono" id="infoIP">192.168.1.105</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label"><i class="fas fa-server" aria-hidden="true"></i> DNS Server</span>
+            <span class="info-value mono" id="infoDNS">8.8.8.8</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label"><i class="fas fa-wifi" aria-hidden="true"></i> Protocol</span>
+            <span class="info-value mono" id="infoProtocol">TCP/IP v4</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label"><i class="fas fa-wave-square" aria-hidden="true"></i> Jitter</span>
+            <span class="info-value mono" id="infoJitter">— ms</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label"><i class="fas fa-clock" aria-hidden="true"></i> Uptime</span>
+            <span class="info-value mono" id="infoUptime">00:00:00</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label"><i class="fas fa-database" aria-hidden="true"></i> Total Data</span>
+            <span class="info-value mono" id="infoTotalData">0.00 MB</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label"><i class="fas fa-boxes-stacked" aria-hidden="true"></i> Packets Sent</span>
+            <span class="info-value mono" id="infoPacketsSent">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quality Gauge -->
+      <div class="panel panel-gauge" aria-label="Network quality gauge">
+        <div class="panel-header">
+          <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+          <h2 class="panel-title">Network Quality Score</h2>
+        </div>
+        <div class="gauge-wrap">
+          <canvas id="gaugeChart" width="220" height="130" aria-label="Network quality gauge" role="img"></canvas>
+          <div class="gauge-score-wrap">
+            <span class="gauge-score" id="gaugeScore">100</span>
+            <span class="gauge-score-label">/100</span>
+          </div>
+        </div>
+        <div class="gauge-legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span>Poor (0–40)</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Fair (41–65)</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#22c55e"></span>Good (66–80)</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>Excellent (81–100)</div>
+        </div>
+      </div>
+
+      <!-- Alerts Panel -->
+      <div class="panel panel-alerts" aria-label="Network alerts">
+        <div class="panel-header">
+          <i class="fas fa-bell" aria-hidden="true"></i>
+          <h2 class="panel-title">Live Alerts</h2>
+          <span class="alert-count-badge" id="alertCount">0</span>
+          <button class="btn-clear-alerts" id="btnClearAlerts" aria-label="Clear all alerts">
+            <i class="fas fa-trash-can" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="alerts-list" id="alertsList" aria-live="polite" aria-label="Alert messages">
+          <div class="alert-empty" id="alertEmpty">
+            <i class="fas fa-check-circle" aria-hidden="true"></i>
+            <span>All systems nominal</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer" role="contentinfo">
+    <span>NetPulse &copy; 2026 &mdash; Real-Time Network Performance Analyzer</span>
+    <span class="footer-sep">|</span>
+    <span>Built with <i class="fas fa-heart" style="color:#f43f5e" aria-hidden="true"></i> for College Mini Project</span>
+    <span class="footer-sep">|</span>
+    <span id="footerSampleCount">Samples: 0</span>
+  </footer>
+
+  <!-- JS Modules -->
+  <script src="js/metrics.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
